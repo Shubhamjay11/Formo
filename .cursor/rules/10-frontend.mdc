@@ -1,0 +1,19 @@
+---
+description: Frontend conventions for app and component code
+globs: src/app/**/*.tsx, src/components/**/*.tsx, src/modules/**/components/**
+---
+
+- Every data-driven view implements loading, empty, and error states. No exceptions.
+- Data fetching happens in Server Components or via server actions — never in
+  useEffect. Client-side fetching (rare) uses @tanstack/react-query.
+- Forms: react-hook-form + zodResolver, submitting to a server action. Disable
+  submit while pending; show inline field errors.
+- Accessibility floor: semantic elements, labels on all inputs, visible focus
+  states, keyboard operability, alt text. Use Radix/shadcn primitives for
+  overlays and menus.
+- Composition over prop drilling: if a prop passes through 2+ levels, restructure
+  with children/slots or context.
+- Styling uses design tokens only (bg-background, text-muted-foreground,
+  rounded-lg, etc.). Never raw hex values or arbitrary one-off values.
+- URL is state for filters/tabs/pagination — use nuqs, not useState.
+- Images use next/image. LCP-critical images get priority.

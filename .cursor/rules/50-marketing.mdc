@@ -1,0 +1,20 @@
+---
+description: Marketing site conventions — design taste layer
+globs: src/app/(marketing)/**
+---
+
+- One idea per section. One primary CTA per page. Sections use py-24 md:py-32.
+- Typography carries the design: max 2 typefaces, large confident headings
+  (hero: clamp-based, tight tracking, text-balance), generous body leading.
+- Copy voice: verbs, outcomes, numbers. Banned words: revolutionize, unleash,
+  supercharge, empower, seamless.
+- Motion: animate opacity/transform only; 0.3–0.6s ease-out; stagger 60–100ms;
+  everything respects prefers-reduced-motion; no looping animation in the
+  initial viewport except deliberate ambient elements.
+- Use motion (Framer Motion) for reveals; GSAP + ScrollTrigger only for
+  dedicated scroll scenes; lazy-load heavy scenes below the fold.
+- Real product screenshots in framed mocks over abstract illustrations.
+- Performance budget: Lighthouse ≥ 95, LCP < 2s, CLS = 0. Hero image priority.
+- All brand strings/links from config/brand.ts; colors from tokens only.
+- After building/changing a section, verify with a browser screenshot at
+  390 / 768 / 1440 px against the section spec before marking done.

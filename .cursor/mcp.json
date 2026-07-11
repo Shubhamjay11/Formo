@@ -1,0 +1,13 @@
+{
+  "$comment": "Keep to ~4-6 active servers. Add credentials locally; do not commit secrets.",
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
+}

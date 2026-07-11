@@ -1,0 +1,51 @@
+---
+description: Core project conventions — always applied
+alwaysApply: true
+---
+
+# Project
+Read docs/PRODUCT.md for product context and docs/ARCHITECTURE.md for system design.
+At the start of any session, read docs/PROGRESS.md to understand current state.
+Feature work is driven by specs in docs/features/. Implement one task at a time.
+
+# Stack (do not substitute or add alternatives)
+- Next.js 15 (App Router) + React 19 + TypeScript (strict)
+- Tailwind CSS v4 + shadcn/ui (components/ui)
+- Drizzle ORM + PostgreSQL (Neon)
+- Better Auth (auth) · Stripe (billing) · Resend + react-email (email)
+- Vitest (unit) · Playwright (e2e) · Biome (lint/format)
+
+# Hard conventions
+- Server Components by default. Add "use client" only when interactivity requires it.
+- FEATURE-MODULE structure: all code for a feature lives in src/modules/<feature>/
+  (components/, actions.ts, service.ts, queries.ts, schemas.ts). See
+  src/modules/_example/README.md. Pages in src/app are thin composers.
+- Modules never import another module's internals — only its service.ts.
+  UI components never import from src/db directly; only service.ts/queries.ts do.
+- Shared homes (do not invent new locations): primitives → src/components/ui ·
+  hooks → src/hooks · types → src/types · emails → src/emails (or module-owned) ·
+  cross-cutting server utils → src/server · test factories → tests/factories.ts ·
+  one-off scripts → scripts/
+- Validate ALL external input with Zod at the boundary. Infer TS types from schemas.
+- Services throw typed errors. Actions catch and return { data } | { error }
+  discriminated unions. Never throw raw errors to the client.
+- Reuse components/ui primitives before creating new components. Extend via cva
+  variants — never restyle shadcn primitives with one-off inline classes.
+- Brand values (names, URLs, colors, plans) come ONLY from config/brand.ts and CSS
+  tokens in app/globals.css. Never hardcode brand-specific values in components.
+- Money is integer cents. Timestamps are UTC in the DB, formatted at the edge.
+- Multi-tenancy: every tenant-owned table has org_id. Every query is scoped by
+  org_id via the withOrg() helper in db/. Never write an unscoped tenant query.
+
+# Behavior contract
+- Before implementing, state a 3–6 line plan. If the task is ambiguous, ask ONE
+  clarifying question instead of guessing.
+- Touch only files needed for the current task. Do not refactor, rename, or
+  "improve" code outside scope.
+- Do not add dependencies without asking. Do not re-litigate decisions recorded
+  in docs/DECISIONS.md.
+- After completing a task: run typecheck and affected tests; tick the task
+  checkbox in the feature spec; update docs/PROGRESS.md (current state, known
+  issues, next up).
+- If you find an out-of-scope bug, record it in PROGRESS.md "Known issues" —
+  do not fix it now.

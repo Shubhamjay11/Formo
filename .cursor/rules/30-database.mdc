@@ -1,0 +1,17 @@
+---
+description: Database schema and migration conventions
+globs: src/db/**/*.ts, drizzle/**
+---
+
+- Schema lives in src/db/schema.ts (split by domain if it exceeds ~300 lines).
+- Naming: snake_case columns, plural table names. Every table has id (uuid,
+  default random), created_at, updated_at.
+- Tenant-owned tables include org_id (FK → organizations.id, indexed, not null).
+- Add an index for every foreign key and every common query path. Justify each.
+- Soft delete (deleted_at) only where the spec requires recovery; otherwise
+  hard delete.
+- Migration workflow: edit schema → `pnpm db:generate` → REVIEW the generated
+  SQL → commit schema + migration together. Never edit applied migrations;
+  never push schema changes without a migration file.
+- Queries live in src/db/queries/ (shared) or a module's queries.ts/service.ts — never inline SQL in components
+  or actions.

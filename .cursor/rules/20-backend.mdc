@@ -1,0 +1,16 @@
+---
+description: Backend conventions for server actions, services, and API routes
+globs: src/modules/**/actions.ts, src/modules/**/service.ts, src/modules/**/queries.ts, src/server/**, src/app/api/**
+---
+
+- Shape: action (auth check → Zod parse → call service → map result) and
+  service (business logic, db access, typed errors). Keep actions thin.
+- FIRST line of every action: resolve session + org membership. Unauthenticated
+  or unauthorized → return { error } early.
+- Multi-step writes use db.transaction(). Webhook handlers are idempotent
+  (check event id before processing) and verify signatures.
+- Rate limit public/unauthenticated endpoints.
+- Log with the logger in src/lib/logger.ts — structured, no console.log in
+  committed code. Never log secrets, tokens, or full request bodies.
+- Environment variables are accessed only through the validated env object
+  (src/lib/env.ts), never process.env directly.

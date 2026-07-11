@@ -1,0 +1,15 @@
+---
+description: Testing conventions
+globs: **/*.test.ts, e2e/**
+---
+
+- Unit test (Vitest): services and non-trivial lib utilities. Test behavior and
+  edge cases, not implementation details. Skip trivial UI snapshot tests.
+- E2E (Playwright): only the critical flows — signup/login, checkout/billing,
+  and each feature's primary happy path (its spec lists which).
+- Tests are independent: no shared mutable state, no execution-order dependence.
+  Each e2e test creates its own user/org via the seed helpers.
+- Use factories in tests/factories.ts for test data — no hand-rolled objects
+  repeated across files.
+- A task is not complete while tests are red. Never weaken or delete a failing
+  test to make it pass — fix the code or flag the spec conflict.
