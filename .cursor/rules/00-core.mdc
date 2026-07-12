@@ -7,6 +7,8 @@ alwaysApply: true
 Read docs/PRODUCT.md for product context and docs/ARCHITECTURE.md for system design.
 At the start of any session, read docs/PROGRESS.md to understand current state.
 Feature work is driven by specs in docs/features/. Implement one task at a time.
+Task checkboxes live only in docs/features/ specs; ARCHITECTURE.md contains no
+task lists.
 
 # Stack (do not substitute or add alternatives)
 - Next.js 15 (App Router) + React 19 + TypeScript (strict)

@@ -1,25 +1,35 @@
-# Product Context (1 page max — keep it tight)
+# Product Context — Formo
 
-> Rewrite this file for every new product. It is loaded constantly; every line
-> must earn its place.
-
-## What it is (3 sentences)
-[Product name] is a [category] that helps [audience] [core outcome].
-It replaces [current painful workflow]. Customers pay [pricing model].
+## What it is
+Formo is an operational forms platform: everything Google Forms does, built
+organization-first. Teams (NGOs, HR, ops) collect submissions and — in later
+phases — run approvals, workflows, and integrations on top of them. Individuals
+use it too: signup auto-creates a personal workspace. Revenue: subscription
+plans gated by forms, submissions/month, and members (Phase D).
 
 ## Who it's for
-- Primary user: [role, context]
-- Core job-to-be-done: [the one thing they hire this product for]
+- Primary: ops/HR/program admins at mission-driven teams (5–200 people)
+- Also: individual creators who want forms without team ceremony
+- Core job-to-be-done: publish a form and act on what comes in — with roles,
+  visibility, and (later) approvals
 
-## Core features (names only — details live in feature specs)
-1. ...
-2. ...
-3. ...
+## Core design decision — "everyone is an org"
+Signup auto-creates a personal workspace (an org with one member, the owner).
+UI says "workspace". Inviting a member makes it a team — no mode switch, no
+separate code path. Every query is org-scoped via withOrg().
 
-## Explicit non-goals (scope fence — the AI must not build toward these)
-- No [tempting adjacent feature]
-- No [platform/segment we're not serving]
+## Current scope — Phase A (MVP)
+1. Auth: register/login/session, email verification, personal workspace on signup
+2. Workspaces: 4 roles (owner/admin/builder/viewer), invites with strict edge cases
+3. Form builder: 10 field types, versioned JSONB schema, draft/publish, slug
+4. Public form: server-rendered page + embed, validated submit, no account needed
+5. Submissions: table per form, CSV export
 
-## Business model
-- Plans: Free (…), Pro ($X/mo — …), Business ($Y/mo — …)
-- Feature gating is defined in config/brand.ts → plans[].features
+## Explicit non-goals (do NOT build toward these)
+- No SSO/SAML/SCIM · no multi-workspace switcher UI (active workspace only)
+- No branching workflows (Phase C is linear-only; nothing in Phase A)
+- No real file uploads (file field = string reference) · no SMTP sending
+- No mobile apps · no template marketplace · no billing until Phase D
+
+## Business model (Phase D)
+Free (1 workspace, 3 forms, 100 subs/mo) → Pro → Team. Details after pilot.

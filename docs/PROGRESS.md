@@ -1,10 +1,10 @@
 # Progress (AI-maintained — update at the end of every working session)
 
 ## Current state (updated: 12-07-2026)
-- Working on: 001-auth (ARCHITECTURE T2 next)
+- Working on: 001-auth (docs/features/001-auth.md T2 next)
 - Last completed: 001-auth T1 — Better Auth + Drizzle adapter, auth/org schema, migration applied to Neon, API route, env.ts
-- Known issues: middleware is a passthrough stub until ARCHITECTURE T5 (was empty export; broke all routes)
-- Next up: ARCHITECTURE T2 — personal-workspace-on-signup transaction + getSession()/requireSession()
+- Known issues: middleware is a passthrough stub until 001-auth T5 (was empty export; broke all routes)
+- Next up: 001-auth T2 — personal-workspace-on-signup transaction + getSession()/requireSession()
 
 ## Feature status
 | Spec | Phase | Status |
