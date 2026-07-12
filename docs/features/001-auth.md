@@ -54,7 +54,7 @@ src/app/(app)/layout.tsx: no session → redirect /login; unverified → /verify
 - [x] T1: Better Auth — email+password, sessions (OAuth fast-follow); auth + org schema; migration
       Files: src/lib/auth.ts, src/db/schema/{auth,org}.ts, src/app/api/auth/[...all]/route.ts
       Done when: register/login work via API; tables migrated
-- [ ] T2: Personal-workspace-on-signup transaction + getSession()/requireSession()
+- [x] T2: Personal-workspace-on-signup transaction + getSession()/requireSession()
       Files: src/lib/auth.ts (hook), src/modules/workspaces/service.ts, src/server/session.ts
       Done when: signup creates user+org+membership atomically (test proves rollback)
 - [ ] T3: Email verification + password reset wired to Resend templates
