@@ -1,14 +1,19 @@
+import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Passthrough stub — session/route guards land in docs/features/001-auth.md T5.
- * Next.js requires middleware.ts to export a middleware function when present.
+ * Optimistic cookie check for app routes. Authoritative session + emailVerified
+ * validation lives in src/app/(app)/layout.tsx.
  */
-export function middleware(_request: NextRequest) {
-	return NextResponse.next();
+export function middleware(request: NextRequest) {
+  const sessionCookie = getSessionCookie(request);
+  if (!sessionCookie) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+  return NextResponse.next();
 }
 
 export const config = {
-	matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/dashboard", "/dashboard/:path*"],
 };

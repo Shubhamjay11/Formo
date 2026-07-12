@@ -63,7 +63,7 @@ src/app/(app)/layout.tsx: no session → redirect /login; unverified → /verify
 - [ ] T4: Auth pages (login/signup/forgot/reset/verify) with forms + states
       Files: src/app/(auth)/**, src/modules/auth/components/
       Done when: all pages functional; inline errors incl. EMAIL_EXISTS
-- [ ] T5: (app) layout guard + middleware + logout
+- [x] T5: (app) layout guard + middleware + logout
       Done when: guards redirect correctly; logout clears session
 - [ ] T6: e2e/auth.spec.ts happy path + duplicate-email case
       Done when: green in CI
