@@ -32,12 +32,17 @@ process.env.BETTER_AUTH_SECRET =
   "dev-only-secret-min-32-characters-long";
 process.env.BETTER_AUTH_URL =
   env.BETTER_AUTH_URL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
+process.env.RESEND_API_KEY =
+  env.RESEND_API_KEY || process.env.RESEND_API_KEY || "re_test_dummy_key";
+process.env.EMAIL_FROM =
+  env.EMAIL_FROM || process.env.EMAIL_FROM || "Acme <hello@acme.com>";
 
 export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts", "src/**/*.test.ts"],
     fileParallelism: false,
+    testTimeout: 30_000,
     setupFiles: ["./tests/setup.ts"],
   },
   resolve: {

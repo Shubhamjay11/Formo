@@ -1,18 +1,20 @@
 # Progress (AI-maintained — update at the end of every working session)
 
 ## Current state (updated: 12-07-2026)
-- Working on: 001-auth (docs/features/001-auth.md T3 next)
-- Last completed: 001-auth T2 — personal workspace on signup (auth hook + workspaces service), getSession()/requireSession(), Vitest rollback proofs against formo_test
+- Working on: 001-auth T3 — code + Vitest shipped; checkbox open pending live Resend delivery
+- Last completed: 001-auth T2 — personal workspace on signup, getSession()/requireSession()
 - Known issues:
-  - middleware is a passthrough stub until 001-auth T5 (was empty export; broke all routes)
-  - BA `user.create.after` runs post-commit; personal workspace uses compensating user DELETE (not one SQL TX for user+org+membership). Documented deviation from 001-auth edge-case wording.
-  - If workspace provision fails and compensating user DELETE also fails, an orphan user without workspace can remain (logged as `ORPHAN_USER_NO_WORKSPACE`); signup still errors to the client.
-- Next up: 001-auth T3 — email verification + password reset wired to Resend templates
+  - manual Resend delivery blocked: no API key (`RESEND_API_KEY` empty in `.env`)
+  - middleware is a passthrough stub until 001-auth T5
+  - BA `user.create.after` runs post-commit; personal workspace uses compensating user DELETE (not one SQL TX for user+org+membership)
+  - If workspace provision fails and compensating user DELETE also fails, orphan user without workspace can remain (`ORPHAN_USER_NO_WORKSPACE`)
+  - With `requireEmailVerification: true`, BA may return generic success on duplicate signup (enumeration protection) instead of EMAIL_EXISTS — confirm in T4
+- Next up: finish T3 manual Resend smoke (set real `RESEND_API_KEY`), then 001-auth T4 auth pages
 
 ## Feature status
 | Spec | Phase | Status |
 |---|---|---|
-| 001-auth | A | T1–T2 done; T3–T6 pending |
+| 001-auth | A | T1–T2 done; T3 code/Vitest done, checkbox open (no live Resend); T4–T6 pending |
 | 002-workspaces | A | Spec draft ready |
 | 003a-form-schema | A | Not started |
 | 003b-builder-ui | A | Not started |
