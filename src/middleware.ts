@@ -1,5 +1,14 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
 /**
- * Session/route protection middleware — implemented in spec 001-auth.
- * (app) routes require a session; (auth) routes redirect signed-in users.
+ * Passthrough stub — session/route guards land in ARCHITECTURE T5.
+ * Next.js requires middleware.ts to export a middleware function when present.
  */
-export {};
+export function middleware(_request: NextRequest) {
+	return NextResponse.next();
+}
+
+export const config = {
+	matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};
