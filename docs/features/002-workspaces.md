@@ -15,8 +15,8 @@ security spine every later feature uses.
 ## Scope
 - In: roles (owner/admin/builder/viewer), invites (create/view/accept/revoke),
   members list + role management, withOrg() + requireRole() helpers,
-  active-workspace resolution (first membership), audit entries (org.created,
-  invite.created, invite.accepted)
+  active-workspace resolution (users.activeOrgId, fallback first membership),
+  audit entries (org.created, invite.created, invite.accepted)
 - Out: multi-workspace switcher UI, transferring ownership, SSO, email
   notifications beyond the invite email
 
@@ -52,7 +52,7 @@ Indexes: memberships(org_id), invites(token), audit_logs(org_id, created_at).
 - [ ] All six edge cases return the specified codes/behavior (tested)
 - [ ] requireRole matrix enforced on every action in this module
 - [ ] Audit rows written for org.created / invite.created / invite.accepted
-- [ ] e2e: owner invites builder → builder accepts → builder sees workspace,
+- [x] e2e: owner invites builder → builder accepts → builder sees workspace,
       cannot open members settings
 
 ## Tasks
@@ -67,5 +67,9 @@ Indexes: memberships(org_id), invites(token), audit_logs(org_id, created_at).
       Done when: functional with loading/empty/error states; viewer sees 403 path
 - [x] T5: Accept-invite page incl. logged-out → auth → return flow
       Done when: mismatch/expired/duplicate states render correctly
-- [ ] T6: e2e/invites.spec.ts full loop + mismatch case
+- [x] T6: e2e/invites.spec.ts full loop + mismatch case
       Done when: green in CI
+      Files: e2e/invites.spec.ts, e2e/helpers/auth.ts, playwright.config.ts
+      Also (product fix approved in plan): users.activeOrgId schema + migration,
+      getActiveOrg()/createPersonalWorkspace/acceptInvite wiring, unit tests,
+      DECISIONS.md

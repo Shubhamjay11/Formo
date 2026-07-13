@@ -73,9 +73,25 @@ export async function findUserIdByEmail(email: string): Promise<string | null> {
   return result.rows[0]?.id ?? null;
 }
 
+export async function findInviteTokenByEmail(
+  email: string,
+): Promise<string | null> {
+  const result = await getPool().query<{ token: string }>(
+    `select token from invites
+     where lower(email) = lower($1) and accepted_at is null
+     order by created_at desc
+     limit 1`,
+    [email],
+  );
+  return result.rows[0]?.token ?? null;
+}
+
 /**
  * Destructive cleanup — only runs against a dedicated test/CI DATABASE_URL
  * (name contains `_test`). No-op otherwise.
+ *
+ * FK-safe order: null active_org_id → invites/audit → memberships → org →
+ * sessions/accounts → user. Safe to call twice for the same email.
  */
 export async function cleanupUserByEmail(email: string): Promise<void> {
   if (!isDedicatedTestDatabase()) return;
@@ -86,10 +102,51 @@ export async function cleanupUserByEmail(email: string): Promise<void> {
   const client = await getPool().connect();
   try {
     await client.query("begin");
+
+    const personalOrg = await client.query<{ id: string }>(
+      "select id from organizations where slug = $1 limit 1",
+      [userId],
+    );
+    const personalOrgId = personalOrg.rows[0]?.id ?? null;
+
+    await client.query(
+      "update users set active_org_id = null where id = $1",
+      [userId],
+    );
+    if (personalOrgId) {
+      await client.query(
+        "update users set active_org_id = null where active_org_id = $1",
+        [personalOrgId],
+      );
+    }
+
+    await client.query(
+      `delete from invites
+       where lower(email) = lower($1)
+          or created_by = $2
+          or ($3::uuid is not null and org_id = $3)`,
+      [email, userId, personalOrgId],
+    );
+
+    await client.query(
+      `delete from audit_logs
+       where actor_id = $1
+          or ($2::uuid is not null and org_id = $2)`,
+      [userId, personalOrgId],
+    );
+
+    await client.query("delete from memberships where user_id = $1", [userId]);
+    if (personalOrgId) {
+      await client.query("delete from memberships where org_id = $1", [
+        personalOrgId,
+      ]);
+      await client.query("delete from organizations where id = $1", [
+        personalOrgId,
+      ]);
+    }
+
     await client.query("delete from sessions where user_id = $1", [userId]);
     await client.query("delete from accounts where user_id = $1", [userId]);
-    await client.query("delete from memberships where user_id = $1", [userId]);
-    await client.query("delete from organizations where slug = $1", [userId]);
     await client.query("delete from users where id = $1", [userId]);
     await client.query("commit");
   } catch (err) {

@@ -10,6 +10,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createTestUser } from "../factories";
 
 async function cleanupUserTree(userId: string) {
+  await db
+    .update(users)
+    .set({ activeOrgId: null })
+    .where(eq(users.id, userId));
   await db.delete(memberships).where(eq(memberships.userId, userId));
   await db.delete(organizations).where(eq(organizations.slug, userId));
   await db.delete(users).where(eq(users.id, userId));
@@ -43,6 +47,12 @@ describe("createPersonalWorkspace", () => {
 
     expect(membership?.userId).toBe(user.id);
     expect(membership?.role).toBe("owner");
+
+    const [updatedUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, user.id));
+    expect(updatedUser?.activeOrgId).toBe(org.id);
   });
 
   it("rolls back org when membership insert fails", async () => {

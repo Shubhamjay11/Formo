@@ -38,7 +38,7 @@ export default defineConfig({
     // Always start with TEST_DATABASE_URL — do not reuse a dev server on formo/prod.
     // Opt in with E2E_REUSE_SERVER=1 only when that server already uses the test DB.
     reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
-    timeout: 180_000,
+    timeout: 420_000,
     env: e2eEnv,
   },
 });

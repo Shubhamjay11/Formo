@@ -42,10 +42,40 @@ export type InviteByToken = {
   acceptedAt: Date | null;
 };
 
-/** First membership by createdAt — active workspace until a switcher exists. */
+/**
+ * Active workspace: users.activeOrgId when the user still has membership there;
+ * otherwise first membership by createdAt (until a switcher exists).
+ */
 export async function getActiveOrg(
   userId: string,
 ): Promise<ActiveOrg | null> {
+  const [user] = await db
+    .select({ activeOrgId: users.activeOrgId })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (user?.activeOrgId) {
+    const [preferred] = await db
+      .select({
+        org: organizations,
+        membership: memberships,
+      })
+      .from(memberships)
+      .innerJoin(organizations, eq(organizations.id, memberships.orgId))
+      .where(
+        and(
+          eq(memberships.userId, userId),
+          eq(memberships.orgId, user.activeOrgId),
+        ),
+      )
+      .limit(1);
+
+    if (preferred) {
+      return preferred;
+    }
+  }
+
   const [row] = await db
     .select({
       org: organizations,

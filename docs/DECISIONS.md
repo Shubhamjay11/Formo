@@ -18,3 +18,6 @@
   no rework). Field definitions validated by zod before save.
 - 2026-07-13 — Keep Better Auth enumeration protection; duplicate signups
   return synthetic success by design.
+- 2026-07-14 — Active org = explicit `activeOrgId` on the user record, set on
+  signup (personal workspace) and invite-accept; `getActiveOrg()` prefers it and
+  falls back to first membership by createdAt. No workspace switcher UI yet.

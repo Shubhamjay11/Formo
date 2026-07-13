@@ -15,6 +15,13 @@
       "when": 1783921619685,
       "tag": "0001_clumsy_bruce_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783968815805,
+      "tag": "0002_strong_whistler",
+      "breakpoints": true
     }
   ]
 }

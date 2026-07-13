@@ -152,6 +152,11 @@ export async function createPersonalWorkspace(user: PersonalWorkspaceUser) {
       role: "owner",
     });
 
+    await tx
+      .update(users)
+      .set({ activeOrgId: org.id })
+      .where(eq(users.id, user.id));
+
     await writeAudit(tx, {
       orgId: org.id,
       actorId: user.id,
@@ -343,6 +348,10 @@ export async function acceptInvite(input: {
 
   // Idempotent success before expiry: re-accept after expiry still succeeds.
   if (existingMembership) {
+    await db
+      .update(users)
+      .set({ activeOrgId: invite.orgId })
+      .where(eq(users.id, input.userId));
     return { membership: existingMembership, alreadyMember: true };
   }
 
@@ -370,6 +379,11 @@ export async function acceptInvite(input: {
       .where(
         and(withOrg(invites.orgId, invite.orgId), eq(invites.id, invite.id)),
       );
+
+    await tx
+      .update(users)
+      .set({ activeOrgId: invite.orgId })
+      .where(eq(users.id, input.userId));
 
     await writeAudit(tx, {
       orgId: invite.orgId,

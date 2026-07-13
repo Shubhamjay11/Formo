@@ -16,7 +16,7 @@ import {
   revokeInvite,
   toPublicInvite,
 } from "@/modules/workspaces/service";
-import { getInviteByToken } from "@/modules/workspaces/queries";
+import { getInviteByToken, getActiveOrg } from "@/modules/workspaces/queries";
 import { and, eq } from "drizzle-orm";
 import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -45,6 +45,10 @@ type CapturedInviteEmail = {
 };
 
 async function cleanupUser(userId: string) {
+  await db
+    .update(users)
+    .set({ activeOrgId: null })
+    .where(eq(users.id, userId));
   await db.delete(memberships).where(eq(memberships.userId, userId));
   await db.delete(users).where(eq(users.id, userId));
 }
@@ -145,6 +149,12 @@ describe("invite service", () => {
     expect(alreadyMember).toBe(false);
     expect(membership.role).toBe("builder");
     expect(membership.userId).toBe(invitee.id);
+
+    const [inviteeAfter] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, invitee.id));
+    expect(inviteeAfter?.activeOrgId).toBe(org.id);
 
     const acceptedAudits = await db
       .select()
@@ -286,6 +296,12 @@ describe("invite service", () => {
 
     expect(result.alreadyMember).toBe(true);
     expect(result.membership.id).toBe(membership.id);
+
+    const [inviteeAfter] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, invitee.id));
+    expect(inviteeAfter?.activeOrgId).toBe(org.id);
   });
 
   it("blocks create when invitee is already a member", async () => {
@@ -481,5 +497,79 @@ describe("getInviteByToken", () => {
     const preview = await getInviteByToken(invite.token);
     expect(preview?.expiresAt.getTime()).toBeLessThan(Date.now());
     expect(preview?.email).toBe("late@example.com");
+  });
+});
+
+describe("getActiveOrg", () => {
+  const userIds: string[] = [];
+  const orgIds: string[] = [];
+
+  afterEach(async () => {
+    for (const orgId of orgIds.splice(0)) {
+      await cleanupOrg(orgId);
+    }
+    for (const userId of userIds.splice(0)) {
+      await cleanupUser(userId);
+    }
+  });
+
+  it("prefers users.activeOrgId over first membership by createdAt", async () => {
+    const user = await createTestUser({ name: "Multi Member" });
+    userIds.push(user.id);
+
+    const personal = await createTestOrg({ name: "Personal" });
+    orgIds.push(personal.id);
+    await createTestMembership({
+      orgId: personal.id,
+      userId: user.id,
+      role: "owner",
+    });
+    await db
+      .update(users)
+      .set({ activeOrgId: personal.id })
+      .where(eq(users.id, user.id));
+
+    // Ensure invited membership is newer than personal.
+    await new Promise((r) => setTimeout(r, 5));
+
+    const invited = await createTestOrg({ name: "Invited Workspace" });
+    orgIds.push(invited.id);
+    await createTestMembership({
+      orgId: invited.id,
+      userId: user.id,
+      role: "builder",
+    });
+    await db
+      .update(users)
+      .set({ activeOrgId: invited.id })
+      .where(eq(users.id, user.id));
+
+    const active = await getActiveOrg(user.id);
+    expect(active?.org.id).toBe(invited.id);
+    expect(active?.membership.role).toBe("builder");
+  });
+
+  it("falls back to first membership when activeOrgId is stale", async () => {
+    const user = await createTestUser({ name: "Stale Active" });
+    userIds.push(user.id);
+
+    const personal = await createTestOrg({ name: "Only Org" });
+    orgIds.push(personal.id);
+    await createTestMembership({
+      orgId: personal.id,
+      userId: user.id,
+      role: "owner",
+    });
+
+    const ghostOrg = await createTestOrg({ name: "Ghost" });
+    orgIds.push(ghostOrg.id);
+    await db
+      .update(users)
+      .set({ activeOrgId: ghostOrg.id })
+      .where(eq(users.id, user.id));
+
+    const active = await getActiveOrg(user.id);
+    expect(active?.org.id).toBe(personal.id);
+    expect(active?.membership.role).toBe("owner");
   });
 });
