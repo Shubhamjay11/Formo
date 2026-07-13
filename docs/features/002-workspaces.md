@@ -61,7 +61,7 @@ Indexes: memberships(org_id), invites(token), audit_logs(org_id, created_at).
       Done when: helpers unit-tested incl. role ordering
 - [x] T2: Invite service + actions (create/revoke/accept, idempotency, expiry)
       Done when: all edge cases pass unit tests; audit rows written
-- [ ] T3: Invite email (Resend template on brand tokens)
+- [x] T3: Invite email (Resend template on brand tokens)
       Done when: email delivers with working link
 - [ ] T4: Members settings UI (table, role change, remove, invite dialog)
       Done when: functional with loading/empty/error states; viewer sees 403 path

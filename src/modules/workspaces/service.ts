@@ -1,3 +1,4 @@
+import { brand } from "@/config/brand";
 import { db, withOrg } from "@/db";
 import { users } from "@/db/schema/auth";
 import {
@@ -7,10 +8,14 @@ import {
   organizations,
   type MembershipRole,
 } from "@/db/schema/org";
+import { sendEmail } from "@/lib/email";
+import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { InviteEmail } from "@/modules/workspaces/emails";
 import { AuthorizationError, requireRole } from "@/server/authz";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
+import { createElement } from "react";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -183,8 +188,8 @@ export async function createInvite(input: {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);
 
-  return db.transaction(async (tx) => {
-    const [invite] = await tx
+  const invite = await db.transaction(async (tx) => {
+    const [created] = await tx
       .insert(invites)
       .values({
         orgId: input.orgId,
@@ -196,7 +201,7 @@ export async function createInvite(input: {
       })
       .returning();
 
-    if (!invite) {
+    if (!created) {
       throw new Error("Failed to create invite");
     }
 
@@ -204,12 +209,44 @@ export async function createInvite(input: {
       orgId: input.orgId,
       actorId: input.createdBy,
       action: "invite.created",
-      target: invite.id,
+      target: created.id,
       metadata: { email, role: input.role },
     });
 
-    return invite;
+    return created;
   });
+
+  const [[org], [inviter]] = await Promise.all([
+    db
+      .select({ name: organizations.name })
+      .from(organizations)
+      .where(eq(organizations.id, input.orgId))
+      .limit(1),
+    db
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, input.createdBy))
+      .limit(1),
+  ]);
+
+  const orgName = org?.name ?? "a workspace";
+  const inviterName = inviter?.name ?? "A teammate";
+  const url = `${env.BETTER_AUTH_URL}/invite/${invite.token}`;
+
+  void sendEmail({
+    to: invite.email,
+    subject: `Join ${orgName} on ${brand.name}`,
+    react: createElement(InviteEmail, {
+      url,
+      orgName,
+      role: invite.role,
+      inviterName,
+    }),
+  }).catch((err) => {
+    logger.error("EMAIL_SEND_FAILED", { kind: "invite", err });
+  });
+
+  return invite;
 }
 
 export async function revokeInvite(input: {

@@ -6,6 +6,8 @@ import {
   memberships,
   organizations,
 } from "@/db/schema/org";
+import { sendEmail } from "@/lib/email";
+import { env } from "@/lib/env";
 import {
   acceptInvite,
   AuthorizationError,
@@ -15,13 +17,31 @@ import {
   toPublicInvite,
 } from "@/modules/workspaces/service";
 import { and, eq } from "drizzle-orm";
-import { afterEach, describe, expect, it } from "vitest";
+import type { ReactElement } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createTestInvite,
   createTestMembership,
   createTestOrg,
   createTestUser,
 } from "../factories";
+
+vi.mock("@/lib/email", () => ({
+  sendEmail: vi.fn(async () => undefined),
+}));
+
+const sendEmailMock = vi.mocked(sendEmail);
+
+type CapturedInviteEmail = {
+  to: string;
+  subject: string;
+  react: ReactElement<{
+    url: string;
+    orgName: string;
+    role: string;
+    inviterName: string;
+  }>;
+};
 
 async function cleanupUser(userId: string) {
   await db.delete(memberships).where(eq(memberships.userId, userId));
@@ -38,6 +58,10 @@ async function cleanupOrg(orgId: string) {
 describe("invite service", () => {
   const userIds: string[] = [];
   const orgIds: string[] = [];
+
+  beforeEach(() => {
+    sendEmailMock.mockClear();
+  });
 
   afterEach(async () => {
     for (const orgId of orgIds.splice(0)) {
@@ -60,6 +84,30 @@ describe("invite service", () => {
     });
     return { owner, org };
   }
+
+  it("sends invite email with working /invite/{token} link", async () => {
+    const { owner, org } = await setupOwnerOrg();
+    const email = `invite-mail-${crypto.randomUUID().slice(0, 8)}@example.com`;
+
+    const invite = await createInvite({
+      orgId: org.id,
+      email,
+      role: "viewer",
+      createdBy: owner.id,
+    });
+
+    expect(sendEmailMock).toHaveBeenCalled();
+    const captured = sendEmailMock.mock.calls
+      .map((c) => c[0] as CapturedInviteEmail)
+      .find((c) => c.to === email.toLowerCase());
+    expect(captured).toBeDefined();
+    expect(captured!.react.props.url).toBe(
+      `${env.BETTER_AUTH_URL}/invite/${invite.token}`,
+    );
+    expect(captured!.react.props.orgName).toBe(org.name);
+    expect(captured!.react.props.role).toBe("viewer");
+    expect(captured!.react.props.inviterName).toBe("Owner");
+  });
 
   it("creates invite, accept adds membership and writes audits", async () => {
     const { owner, org } = await setupOwnerOrg();
