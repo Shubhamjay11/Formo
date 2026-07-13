@@ -16,6 +16,7 @@ import {
   revokeInvite,
   toPublicInvite,
 } from "@/modules/workspaces/service";
+import { getInviteByToken } from "@/modules/workspaces/queries";
 import { and, eq } from "drizzle-orm";
 import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -409,5 +410,76 @@ describe("invite service", () => {
 
     expect(publicInvite).not.toHaveProperty("token");
     expect(publicInvite.email).toBe("a@example.com");
+  });
+});
+
+describe("getInviteByToken", () => {
+  const userIds: string[] = [];
+  const orgIds: string[] = [];
+
+  afterEach(async () => {
+    for (const orgId of orgIds.splice(0)) {
+      await cleanupOrg(orgId);
+    }
+    for (const userId of userIds.splice(0)) {
+      await cleanupUser(userId);
+    }
+  });
+
+  it("returns null for unknown token", async () => {
+    await expect(getInviteByToken("missing-token")).resolves.toBeNull();
+  });
+
+  it("returns public preview with org name for a valid invite", async () => {
+    const owner = await createTestUser({ name: "Owner" });
+    userIds.push(owner.id);
+    const org = await createTestOrg({ name: "Acme Workspace" });
+    orgIds.push(org.id);
+    await createTestMembership({
+      orgId: org.id,
+      userId: owner.id,
+      role: "owner",
+    });
+    const invite = await createTestInvite({
+      orgId: org.id,
+      email: "builder@example.com",
+      createdBy: owner.id,
+      role: "builder",
+      token: `tok-${crypto.randomUUID()}`,
+    });
+
+    const preview = await getInviteByToken(invite.token);
+    expect(preview).toMatchObject({
+      id: invite.id,
+      orgId: org.id,
+      orgName: "Acme Workspace",
+      email: "builder@example.com",
+      role: "builder",
+      acceptedAt: null,
+    });
+    expect(preview).not.toHaveProperty("token");
+  });
+
+  it("still returns an expired invite row for the page to classify", async () => {
+    const owner = await createTestUser({ name: "Owner" });
+    userIds.push(owner.id);
+    const org = await createTestOrg();
+    orgIds.push(org.id);
+    await createTestMembership({
+      orgId: org.id,
+      userId: owner.id,
+      role: "owner",
+    });
+    const invite = await createTestInvite({
+      orgId: org.id,
+      email: "late@example.com",
+      createdBy: owner.id,
+      token: `expired-${crypto.randomUUID()}`,
+      expiresAt: new Date(Date.now() - 60_000),
+    });
+
+    const preview = await getInviteByToken(invite.token);
+    expect(preview?.expiresAt.getTime()).toBeLessThan(Date.now());
+    expect(preview?.email).toBe("late@example.com");
   });
 });

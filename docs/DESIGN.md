@@ -11,7 +11,8 @@
 - Installed shadcn/ui: button, input, label, card, alert, dialog, select
 - Feature components (src/modules/*/components): auth — login-form, signup-form,
   forgot-password-form, reset-password-form, verify-email-notice; workspaces —
-  members-settings, members-table, pending-invites, invite-member-dialog
+  members-settings, members-table, pending-invites, invite-member-dialog,
+  accept-invite
 
 ## Voice & microcopy
 - Buttons: verb-first ("Create project", not "New"). Destructive actions name

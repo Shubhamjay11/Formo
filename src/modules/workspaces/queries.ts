@@ -32,6 +32,16 @@ export type MemberListItem = {
   email: string;
 };
 
+export type InviteByToken = {
+  id: string;
+  orgId: string;
+  orgName: string;
+  email: string;
+  role: MembershipRole;
+  expiresAt: Date;
+  acceptedAt: Date | null;
+};
+
 /** First membership by createdAt — active workspace until a switcher exists. */
 export async function getActiveOrg(
   userId: string,
@@ -90,4 +100,26 @@ export async function listInvites(orgId: string) {
     .orderBy(asc(invites.createdAt));
 
   return rows.map(toPublicInvite);
+}
+
+/** Bootstrap exception: resolve invite by token before withOrg scoping. */
+export async function getInviteByToken(
+  token: string,
+): Promise<InviteByToken | null> {
+  const [row] = await db
+    .select({
+      id: invites.id,
+      orgId: invites.orgId,
+      orgName: organizations.name,
+      email: invites.email,
+      role: invites.role,
+      expiresAt: invites.expiresAt,
+      acceptedAt: invites.acceptedAt,
+    })
+    .from(invites)
+    .innerJoin(organizations, eq(organizations.id, invites.orgId))
+    .where(eq(invites.token, token))
+    .limit(1);
+
+  return row ?? null;
 }

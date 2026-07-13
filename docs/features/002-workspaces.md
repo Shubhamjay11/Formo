@@ -65,7 +65,7 @@ Indexes: memberships(org_id), invites(token), audit_logs(org_id, created_at).
       Done when: email delivers with working link
 - [x] T4: Members settings UI (table, role change, remove, invite dialog)
       Done when: functional with loading/empty/error states; viewer sees 403 path
-- [ ] T5: Accept-invite page incl. logged-out → auth → return flow
+- [x] T5: Accept-invite page incl. logged-out → auth → return flow
       Done when: mismatch/expired/duplicate states render correctly
 - [ ] T6: e2e/invites.spec.ts full loop + mismatch case
       Done when: green in CI
