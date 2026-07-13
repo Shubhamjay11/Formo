@@ -1,10 +1,12 @@
 import { db } from "@/db";
 import { users } from "@/db/schema/auth";
 import {
+  invites,
   memberships,
   organizations,
   type MembershipRole,
 } from "@/db/schema/org";
+import { randomBytes } from "node:crypto";
 
 /**
  * Test data factories. All unit + e2e tests create data through these —
@@ -70,4 +72,34 @@ export async function createTestMembership(input: {
   }
 
   return membership;
+}
+
+export async function createTestInvite(input: {
+  orgId: string;
+  email: string;
+  createdBy: string;
+  role?: Exclude<MembershipRole, "owner">;
+  token?: string;
+  expiresAt?: Date;
+  acceptedAt?: Date | null;
+}) {
+  const [invite] = await db
+    .insert(invites)
+    .values({
+      orgId: input.orgId,
+      email: input.email.trim().toLowerCase(),
+      role: input.role ?? "builder",
+      token: input.token ?? randomBytes(32).toString("base64url"),
+      expiresAt:
+        input.expiresAt ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      acceptedAt: input.acceptedAt ?? null,
+      createdBy: input.createdBy,
+    })
+    .returning();
+
+  if (!invite) {
+    throw new Error("createTestInvite failed");
+  }
+
+  return invite;
 }

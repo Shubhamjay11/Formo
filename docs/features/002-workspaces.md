@@ -59,7 +59,7 @@ Indexes: memberships(org_id), invites(token), audit_logs(org_id, created_at).
 - [x] T1: memberships/invites/audit schema + migration + withOrg()/requireRole()
       Files: src/db/schema/org.ts, src/db/index.ts, src/server/authz.ts
       Done when: helpers unit-tested incl. role ordering
-- [ ] T2: Invite service + actions (create/revoke/accept, idempotency, expiry)
+- [x] T2: Invite service + actions (create/revoke/accept, idempotency, expiry)
       Done when: all edge cases pass unit tests; audit rows written
 - [ ] T3: Invite email (Resend template on brand tokens)
       Done when: email delivers with working link
