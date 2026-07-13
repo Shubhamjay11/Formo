@@ -35,7 +35,7 @@ notice. Card layout, react-hook-form + zod, loading + inline error states.
 src/app/(app)/layout.tsx: no session → redirect /login; unverified → /verify-email.
 
 ## Edge cases
-- Register with existing email → 409 EMAIL_EXISTS (friendly inline message)
+- Duplicate signup → synthetic success (enumeration protection), no second user created
 - Session expired mid-use → 401 → redirect /login (middleware)
 - Unverified user hitting (app) → verify-email page with resend button
 - Reset token expired/used → clear error + restart flow
@@ -46,7 +46,7 @@ src/app/(app)/layout.tsx: no session → redirect /login; unverified → /verify
 - [ ] Register → verification email (Resend) → verify → /dashboard shows
       "<name>'s workspace"
 - [ ] users, organizations, memberships rows created atomically on signup
-- [ ] Login/logout/reset all work; 409 on duplicate email
+- [ ] Login/logout/reset all work
 - [ ] Unauthenticated /dashboard → /login; unverified → /verify-email
 - [ ] e2e: register→verify→login→dashboard green
 
@@ -65,5 +65,5 @@ src/app/(app)/layout.tsx: no session → redirect /login; unverified → /verify
       Done when: all pages functional; inline errors incl. EMAIL_EXISTS
 - [x] T5: (app) layout guard + middleware + logout
       Done when: guards redirect correctly; logout clears session
-- [ ] T6: e2e/auth.spec.ts happy path + duplicate-email case
+- [x] T6: e2e/auth.spec.ts happy path + duplicate-email case
       Done when: green in CI

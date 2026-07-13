@@ -16,3 +16,5 @@
 - 2026-07-11 — FORMO: Form fields stored as versioned JSONB on the form;
   schema_version stamped on every submission (enables Phase C records with
   no rework). Field definitions validated by zod before save.
+- 2026-07-13 — Keep Better Auth enumeration protection; duplicate signups
+  return synthetic success by design.
