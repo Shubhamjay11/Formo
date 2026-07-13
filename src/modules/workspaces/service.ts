@@ -40,8 +40,67 @@ export class InviteError extends Error {
   }
 }
 
+export type MemberErrorCode = "LAST_OWNER" | "NOT_FOUND";
+
+export class MemberError extends Error {
+  readonly code: MemberErrorCode;
+
+  constructor(code: MemberErrorCode, message: string) {
+    super(message);
+    this.name = "MemberError";
+    this.code = code;
+  }
+}
+
 export type InviteRow = typeof invites.$inferSelect;
 export type MembershipRow = typeof memberships.$inferSelect;
+export type InviteableRole = Exclude<MembershipRole, "owner">;
+
+async function countOwners(orgId: string) {
+  const owners = await db
+    .select({ id: memberships.id })
+    .from(memberships)
+    .where(
+      and(withOrg(memberships.orgId, orgId), eq(memberships.role, "owner")),
+    );
+  return owners.length;
+}
+
+async function sendInviteEmail(input: {
+  invite: InviteRow;
+  orgId: string;
+  actorId: string;
+}) {
+  const [[org], [inviter]] = await Promise.all([
+    db
+      .select({ name: organizations.name })
+      .from(organizations)
+      .where(eq(organizations.id, input.orgId))
+      .limit(1),
+    db
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, input.actorId))
+      .limit(1),
+  ]);
+
+  const orgName = org?.name ?? "a workspace";
+  const inviterName = inviter?.name ?? "A teammate";
+  const url = `${env.BETTER_AUTH_URL}/invite/${input.invite.token}`;
+
+  void sendEmail({
+    to: input.invite.email,
+    subject: `Join ${orgName} on ${brand.name}`,
+    react: createElement(InviteEmail, {
+      url,
+      orgName,
+      role: input.invite.role,
+      inviterName,
+    }),
+  }).catch((err) => {
+    logger.error("EMAIL_SEND_FAILED", { kind: "invite", err });
+  });
+}
 
 /** Strip token before returning invite data to the client via actions. */
 export function toPublicInvite(invite: InviteRow) {
@@ -216,34 +275,10 @@ export async function createInvite(input: {
     return created;
   });
 
-  const [[org], [inviter]] = await Promise.all([
-    db
-      .select({ name: organizations.name })
-      .from(organizations)
-      .where(eq(organizations.id, input.orgId))
-      .limit(1),
-    db
-      .select({ name: users.name })
-      .from(users)
-      .where(eq(users.id, input.createdBy))
-      .limit(1),
-  ]);
-
-  const orgName = org?.name ?? "a workspace";
-  const inviterName = inviter?.name ?? "A teammate";
-  const url = `${env.BETTER_AUTH_URL}/invite/${invite.token}`;
-
-  void sendEmail({
-    to: invite.email,
-    subject: `Join ${orgName} on ${brand.name}`,
-    react: createElement(InviteEmail, {
-      url,
-      orgName,
-      role: invite.role,
-      inviterName,
-    }),
-  }).catch((err) => {
-    logger.error("EMAIL_SEND_FAILED", { kind: "invite", err });
+  await sendInviteEmail({
+    invite,
+    orgId: input.orgId,
+    actorId: input.createdBy,
   });
 
   return invite;
@@ -346,6 +381,153 @@ export async function acceptInvite(input: {
 
     return { membership, alreadyMember: false };
   });
+}
+
+export async function updateMemberRole(input: {
+  orgId: string;
+  membershipId: string;
+  role: InviteableRole;
+  actorId: string;
+}): Promise<MembershipRow> {
+  await requireRole(input.orgId, input.actorId, "admin");
+
+  const [target] = await db
+    .select()
+    .from(memberships)
+    .where(
+      and(
+        withOrg(memberships.orgId, input.orgId),
+        eq(memberships.id, input.membershipId),
+      ),
+    )
+    .limit(1);
+
+  if (!target) {
+    throw new MemberError("NOT_FOUND", "Member not found");
+  }
+
+  if (target.role === "owner") {
+    const ownerCount = await countOwners(input.orgId);
+    if (ownerCount <= 1) {
+      throw new MemberError(
+        "LAST_OWNER",
+        "The last owner cannot be demoted",
+      );
+    }
+  }
+
+  const [updated] = await db
+    .update(memberships)
+    .set({ role: input.role })
+    .where(
+      and(
+        withOrg(memberships.orgId, input.orgId),
+        eq(memberships.id, input.membershipId),
+      ),
+    )
+    .returning();
+
+  if (!updated) {
+    throw new MemberError("NOT_FOUND", "Member not found");
+  }
+
+  return updated;
+}
+
+export async function removeMember(input: {
+  orgId: string;
+  membershipId: string;
+  actorId: string;
+}): Promise<void> {
+  await requireRole(input.orgId, input.actorId, "admin");
+
+  const [target] = await db
+    .select()
+    .from(memberships)
+    .where(
+      and(
+        withOrg(memberships.orgId, input.orgId),
+        eq(memberships.id, input.membershipId),
+      ),
+    )
+    .limit(1);
+
+  if (!target) {
+    throw new MemberError("NOT_FOUND", "Member not found");
+  }
+
+  if (target.role === "owner") {
+    const ownerCount = await countOwners(input.orgId);
+    if (ownerCount <= 1) {
+      throw new MemberError(
+        "LAST_OWNER",
+        "The last owner cannot be removed",
+      );
+    }
+  }
+
+  const deleted = await db
+    .delete(memberships)
+    .where(
+      and(
+        withOrg(memberships.orgId, input.orgId),
+        eq(memberships.id, input.membershipId),
+      ),
+    )
+    .returning({ id: memberships.id });
+
+  if (deleted.length === 0) {
+    throw new MemberError("NOT_FOUND", "Member not found");
+  }
+}
+
+export async function resendInvite(input: {
+  orgId: string;
+  inviteId: string;
+  actorId: string;
+}): Promise<InviteRow> {
+  await requireRole(input.orgId, input.actorId, "admin");
+
+  const now = new Date();
+  const [invite] = await db
+    .select()
+    .from(invites)
+    .where(
+      and(
+        withOrg(invites.orgId, input.orgId),
+        eq(invites.id, input.inviteId),
+        isNull(invites.acceptedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!invite) {
+    throw new InviteError("INVITE_INVALID", "Invite not found");
+  }
+
+  const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);
+  const [updated] = await db
+    .update(invites)
+    .set({ expiresAt })
+    .where(
+      and(
+        withOrg(invites.orgId, input.orgId),
+        eq(invites.id, input.inviteId),
+      ),
+    )
+    .returning();
+
+  if (!updated) {
+    throw new InviteError("INVITE_INVALID", "Invite not found");
+  }
+
+  await sendInviteEmail({
+    invite: updated,
+    orgId: input.orgId,
+    actorId: input.actorId,
+  });
+
+  return updated;
 }
 
 export { AuthorizationError };

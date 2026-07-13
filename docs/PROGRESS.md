@@ -2,18 +2,18 @@
 
 ## Current state (updated: 13-07-2026)
 - Working on: —
-- Last completed: 002-workspaces T3 — invite email (Resend template + send on createInvite)
+- Last completed: 002-workspaces T4 — Members settings UI (table, role change, remove, invite dialog, 403 path)
 - Known issues:
   - T4 EMAIL_EXISTS: user chose leave BA config as-is (2026-07-13). With `requireEmailVerification: true`, BA returns synthetic success on duplicate signup (no `USER_ALREADY_EXISTS`). Signup form maps that code when present; Done when unmet — T4 stays unchecked. See DECISIONS.md 2026-07-13 (enumeration protection by design); T6 asserts synthetic success + no second user row
   - BA `user.create.after` runs post-commit; personal workspace uses compensating user DELETE (not one SQL TX for user+org+membership)
   - If workspace provision fails and compensating user DELETE also fails, orphan user without workspace can remain (`ORPHAN_USER_NO_WORKSPACE`)
-- Next up: 002-workspaces T4 — Members settings UI
+- Next up: 002-workspaces T5 — Accept-invite page incl. logged-out → auth → return flow
 
 ## Feature status
 | Spec | Phase | Status |
 |---|---|---|
 | 001-auth | A | T1–T3, T5–T6 done; T4 pages shipped, checkbox open (EMAIL_EXISTS Known issue) |
-| 002-workspaces | A | T1–T3 done; T4–T6 open |
+| 002-workspaces | A | T1–T4 done; T5–T6 open |
 | 003a-form-schema | A | Not started |
 | 003b-builder-ui | A | Not started |
 | 003c-public-form | A | Not started |

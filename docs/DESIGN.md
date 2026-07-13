@@ -8,9 +8,10 @@
 - Spacing rhythm: 4px base; app sections space-y-6; marketing sections py-24/32
 
 ## Component inventory
-- Installed shadcn/ui: [list as you add: button, input, dialog, dropdown-menu,
-  card, table, tabs, toast, ...]
-- Feature components (src/modules/*/components): [list as built]
+- Installed shadcn/ui: button, input, label, card, alert, dialog, select
+- Feature components (src/modules/*/components): auth — login-form, signup-form,
+  forgot-password-form, reset-password-form, verify-email-notice; workspaces —
+  members-settings, members-table, pending-invites, invite-member-dialog
 
 ## Voice & microcopy
 - Buttons: verb-first ("Create project", not "New"). Destructive actions name

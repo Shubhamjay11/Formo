@@ -63,7 +63,7 @@ Indexes: memberships(org_id), invites(token), audit_logs(org_id, created_at).
       Done when: all edge cases pass unit tests; audit rows written
 - [x] T3: Invite email (Resend template on brand tokens)
       Done when: email delivers with working link
-- [ ] T4: Members settings UI (table, role change, remove, invite dialog)
+- [x] T4: Members settings UI (table, role change, remove, invite dialog)
       Done when: functional with loading/empty/error states; viewer sees 403 path
 - [ ] T5: Accept-invite page incl. logged-out → auth → return flow
       Done when: mismatch/expired/duplicate states render correctly
