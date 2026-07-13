@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   index,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -16,6 +17,8 @@ export const membershipRoleEnum = pgEnum("membership_role", [
   "builder",
   "viewer",
 ]);
+
+export type MembershipRole = (typeof membershipRoleEnum.enumValues)[number];
 
 export const organizations = pgTable(
   "organizations",
@@ -56,8 +59,59 @@ export const memberships = pgTable(
   ],
 );
 
+export const invites = pgTable(
+  "invites",
+  {
+    id: uuid("id").default(sql`pg_catalog.gen_random_uuid()`).primaryKey(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    role: membershipRoleEnum("role").notNull(),
+    token: text("token").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    acceptedAt: timestamp("accepted_at"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("invites_token_idx").on(table.token),
+    index("invites_org_id_idx").on(table.orgId),
+    index("invites_created_by_idx").on(table.createdBy),
+  ],
+);
+
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: uuid("id").default(sql`pg_catalog.gen_random_uuid()`).primaryKey(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    actorId: uuid("actor_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    action: text("action").notNull(),
+    target: text("target"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("audit_logs_org_id_created_at_idx").on(table.orgId, table.createdAt),
+    index("audit_logs_actor_id_idx").on(table.actorId),
+  ],
+);
+
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   memberships: many(memberships),
+  invites: many(invites),
+  auditLogs: many(auditLogs),
 }));
 
 export const membershipsRelations = relations(memberships, ({ one }) => ({
@@ -67,6 +121,28 @@ export const membershipsRelations = relations(memberships, ({ one }) => ({
   }),
   user: one(users, {
     fields: [memberships.userId],
+    references: [users.id],
+  }),
+}));
+
+export const invitesRelations = relations(invites, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [invites.orgId],
+    references: [organizations.id],
+  }),
+  creator: one(users, {
+    fields: [invites.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [auditLogs.orgId],
+    references: [organizations.id],
+  }),
+  actor: one(users, {
+    fields: [auditLogs.actorId],
     references: [users.id],
   }),
 }));

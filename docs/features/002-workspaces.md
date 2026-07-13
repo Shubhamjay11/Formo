@@ -56,7 +56,7 @@ Indexes: memberships(org_id), invites(token), audit_logs(org_id, created_at).
       cannot open members settings
 
 ## Tasks
-- [ ] T1: memberships/invites/audit schema + migration + withOrg()/requireRole()
+- [x] T1: memberships/invites/audit schema + migration + withOrg()/requireRole()
       Files: src/db/schema/org.ts, src/db/index.ts, src/server/authz.ts
       Done when: helpers unit-tested incl. role ordering
 - [ ] T2: Invite service + actions (create/revoke/accept, idempotency, expiry)
