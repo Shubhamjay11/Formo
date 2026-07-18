@@ -22,6 +22,13 @@
       "when": 1783968815805,
       "tag": "0002_strong_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784381479985,
+      "tag": "0003_exotic_meteorite",
+      "breakpoints": true
     }
   ]
 }

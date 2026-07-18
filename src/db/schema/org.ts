@@ -10,6 +10,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
+import { forms } from "./forms";
 
 export const membershipRoleEnum = pgEnum("membership_role", [
   "owner",
@@ -112,6 +113,7 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   memberships: many(memberships),
   invites: many(invites),
   auditLogs: many(auditLogs),
+  forms: many(forms),
 }));
 
 export const membershipsRelations = relations(memberships, ({ one }) => ({
